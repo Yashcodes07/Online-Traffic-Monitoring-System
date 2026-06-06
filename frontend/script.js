@@ -1,11 +1,9 @@
 // -------------------------------------------------------
-// CONFIG — change this to your deployed backend URL
-// For local testing: http://127.0.0.1:5000/api
-// For deployed:      https://your-backend.onrender.com/api
+// CONFIG
 // -------------------------------------------------------
 const API_URL = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
-    ? 'http://127.0.0.1:5000/api'
-    : '/api';  // same origin on deployment
+    ? 'http://127.0.0.1:8000/api'
+    : 'https://helmet-detection-project-api.onrender.com/api';
 
 const MAX_SIZE_MB = 100;
 
@@ -48,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // -------------------------------------------------------
 async function checkServerHealth() {
     try {
-        const res = await fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(5000) });
+        const res = await fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(8000) });
         if (res.ok) setStatus('Ready', 'success');
         else setStatus('Server Error', 'error');
     } catch {
@@ -84,7 +82,6 @@ function setupEventListeners() {
 // FILE HANDLING
 // -------------------------------------------------------
 function handleFile(file) {
-    // Size check
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
         alert(`File too large. Maximum allowed size is ${MAX_SIZE_MB}MB.`);
         return;
@@ -101,7 +98,6 @@ function handleFile(file) {
     selectedFile = file;
     previewFileName.textContent = file.name;
 
-    // Show preview
     uploadContent.style.display = 'none';
     previewContent.style.display = 'flex';
     previewImage.style.display = 'none';
@@ -140,12 +136,11 @@ async function runDetection() {
         const res = await fetch(`${API_URL}/predict`, { method: 'POST', body: formData });
 
         if (!res.ok) {
-            const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-            throw new Error(err.error || 'Detection failed');
+            const err = await res.json().catch(() => ({ error: `Server error ${res.status}` }));
+            throw new Error(err.detail || err.error || 'Detection failed');
         }
 
         const data = await res.json();
-
         if (!data.success) throw new Error(data.error || 'Detection failed');
 
         showResults(data);
@@ -173,12 +168,11 @@ function showResults(data) {
 
     } else if (data.type === 'video') {
         videoResults.style.display = 'block';
-        const videoUrl = `${API_URL.replace('/api', '')}${data.download_url}`;
+        const videoUrl = `https://helmet-detection-project-api.onrender.com${data.download_url}`;
         resultVideo.src = videoUrl;
         downloadLink.href = videoUrl;
     }
 
-    // Stats
     const counts = data.counts || {};
     const h  = counts.helmet    || 0;
     const nh = counts.no_helmet || 0;
