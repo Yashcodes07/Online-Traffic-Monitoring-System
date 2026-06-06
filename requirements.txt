@@ -1,6 +1,0 @@
-ultralytics
-opencv-python
-fastapi
-uvicorn
-numpy
-python-multipart
